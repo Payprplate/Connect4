@@ -1,0 +1,194 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <Windows.h>
+#include <conio.h>
+
+
+
+#define ROWS 9    //I used the #define directive to set the number of rows and columns to be used in the gameboard.
+#define COLUMNS 9
+
+int row, col;
+int done = 0;       //setting all global integers to be used by various functions.
+int turn = 0;
+int choice = 0;
+char yes[] = "yes";
+char no[] = "no";
+const char *gamePieces = "!?";   //The game pieces to be used will be a 1 (for User 1) and a 2 (for User 2).
+char board[ROWS * COLUMNS]; 
+int flag = 0;
+
+void boardInitialize(char *board);   //initial call for the board setup function.
+int turnLogic(char *board, int User, const char*); //initial call for the turnLogic function.
+int winCheck(char* board);
+int checkFour(char* baord, int, int, int, int);
+int sideCheck(char* board);
+int acrossCheck(char* board);
+int upCheck(char* board);
+int menu();
+
+
+
+int main() {  //the main function being called at the start of the program.
+    do {
+        menu();  //This will run the main menu function until a flag integer is changed to proceed.
+    } while (flag == 0);
+}
+
+
+
+
+
+void boardInitialize(char *board) {  //the function to print out the board.
+    system("cls");
+    printf("\n ------Connect Four To Win!------\n");  //Prints out the overhead banner
+    for (row = 0; row < ROWS; row++) {   //creates a for loop to create the rows
+        for (col = 0; col < COLUMNS; col++) { //creates a for loop to create the columns
+            printf(" %c", board[COLUMNS * row + col]);  //prints out the board char with the parameters of COLUMNS (= 9) multiplied by the sum of rows and columns.
+        }                                               //This will write from left to right writing out the board in the console.
+        puts(" "); //This will put the spaces in between each of the periods used as game board markers.
+    }
+
+
+    printf(" 1 2 3 4 5 6 7 8 9 \n"); //prints out the bottom column numbers for the board.
+}
+
+int turnLogic(char *board, int User, const char *gamePieces) //the function to allow turns to be taken by Users.
+{
+    int row = 0;  //sets global integers rows and cols to 0.
+    int col = 0;
+    printf("User %d | Game Piece:(%c)| ", User + 1, gamePieces[User]); //Prints out the User name and their respective game piece.
+    printf("\n_____________________________ \nWhere do you want to place your pice?\n");
+
+    printf("\nEnter column number: "); //Asks User for the column they want to drop a piece.
+    while (1) { //while loop is set. A 1 is used as a parameter to create an infinite loop.
+        if (1 != scanf_s("%d", &col) || col < 1 || col > 9) {  //Takes the input of the User for their column selection. It reads it between the numbers of 1 and 9.
+            printf("Number not available. Enter again: "); //Will prompt the User if the statement is not valid.
+        }
+        else {  //if the statement is between the numbers 1 and 9, the loop will break.
+            break;
+        }
+    }
+    col = col - 1; //subtracts 1 from the value of col.
+
+    for (row = ROWS - 1; row >= 0; row--) { //Scans through the rows bottom to top until there are no more.
+        if (board[COLUMNS * row + col] == '.') { //Checks the rows to see if there is a period or a game piece.
+            board[COLUMNS * row + col] = gamePieces[User]; //if there is no game piece in that row slot, it will place a game piece.
+            return 1; //closes the loop when a piece is placed.
+        }
+    }
+    return 0;
+}
+
+void initialize() {  //function to initialize the game.
+    
+    for (int r = 0; r < ROWS * COLUMNS; r++) { //Starts a for loop with r set at 0. Makes sure it is less than the number of board spaces, and adds 1 every loop.
+        board[r] = '.'; //Places a period in each space as it goes through and reads across the area of the columns and rows.
+    }
+    for (turn = 0; turn < ROWS * COLUMNS && !done; turn++) { // Creates a for loop that starts by setting the turns to 0. It adds 1 to the turns whenever it sees 
+                                                                // that the integer is less than that of the game board area, and it sees the turn is done. 
+        //system("cls");  //When the turn starts it clears the previous board to keep a clean console.
+        boardInitialize(board); //runs the board initialization function again to make the new turn's board.
+        while (!turnLogic(board, turn % 2, gamePieces)) //Calls back to the turnLogic function which reads for game pieces when a column is requested
+        {           //This function starts whenever the turnLogic function discovers there are no periods to be found in a column.
+            //system("cls"); //The console will be cleared.
+            boardInitialize(board); //The current game board will be replaced.
+            printf("Column Full\n"); //The User will be prompted that there is no room in the chosen column.
+        }
+        done = winCheck(board);
+    }
+    boardInitialize(board); //requests the game board to be initialized.
+    if (turn == COLUMNS * ROWS && !done) {  //if statement with the condition of the the turn number being equal to the number of tiles.
+        //system("cls"); //clears screen
+        boardInitialize(board);
+        printf("\nScratch"); //alerts the user of a tie game
+        
+    }else {
+        system("cls"); 
+        turn--; //subtracts 1 from the turn integer
+        boardInitialize(board);
+        printf("\nPlayer %d (%c) wins!", turn % 2 + 1, gamePieces[turn%2]);
+        //flag = 0;
+
+    }
+    
+}
+
+int winCheck(char *board) {
+    return(sideCheck(board) || upCheck(board) || acrossCheck(board)); //sets the integer to check for win which is called to in the initialization 
+}
+
+int checkFour(char *board, int a, int b, int c, int d) {
+    if (board[a] == board[b] && board[b] == board[c] && board[c] == board[d] && board[a] != '.') {
+        return 1;
+    }
+    return 0;
+}
+
+int upCheck(char* board) { //function to check up and down
+    int row, col, index2; //sets row, column, and index integers
+    const int height = 1; //sets constant integer of height to 1
+
+    for (row = 0; row < ROWS - 3; row++) { //for loop to scan across all board rows
+        for (col = 0; col < COLUMNS; col++) { //for loop to scan across all board columns
+            index2 = COLUMNS * row + col; //sets the value of index
+            if (checkFour(board, index2, index2 + height, index2 + height * 2, index2 + height * 3)) { //if statement to see if there are four in a row
+                return 1; //return a 1 to the value of upCheck.
+            }
+        }
+    }
+    return 0;
+}
+
+int sideCheck(char *board) {
+    int row, col, index3; //sets integer values of row, col, and index
+    const int width = 1; //sets the constant value of width
+
+    for (row = 0; row < ROWS; row++) { //for loop to sweep through the rows
+        for (col = 0; col < COLUMNS - 3; col++) { // for loop to sweep through columns
+            index3 = COLUMNS * row + col; //sets the value of index to the product of the board's column number, the integer row, and integer col.
+            if (checkFour(board, index3, index3 + width, index3 + width * 2, index3 + width * 3)) { //if statement to check for four in a row going across.
+                return 1; //if there are four in a row, it returns a value of 1 to the integer to be read as true.
+            }
+        }
+    }
+    return 0;
+}
+
+
+int acrossCheck(char *board) { //function to check diagonally
+    const int drt = 1, dl = 1; //sets constant integers for diagonal right and diagonal left
+    int row, col, index, count = 0; //sets integers of row, col, index, and count
+
+    for (row = 0; row < ROWS - 3; row++) { //for loop to scan across rows on board
+        for (col = 0; col < COLUMNS - 3; col++) { //for loop to scan across columns on board
+            index = COLUMNS * row + col; //sets the value of index
+            if (count <= 3 && checkFour(board, index, index + dl, index + dl * 2, index + dl * 3) || count >= 3 && checkFour(board, index, index + drt, index + drt * 2, index + drt * 3)) { //if statement to check diagonally if four are in a row
+                return 1; //if there are four, set a true value to acrossCheck.
+            }
+            count++; //add to the value of count until the previous for loop is true
+        }
+        count = 0; //resets count to 0
+    }
+    return 0;
+}
+
+
+
+int menu() { //creates the main menu which is called upon in the main() function.
+    int choice = 0; //sets an integer named choice to 0.
+    printf("\nWelcome to Connect Four!"); //prints out the game banner
+    printf("\n------------------------");
+    printf("\nWhat would you like to do?"); //Asks the Users a question and lists possible answers.
+    printf("\n 1. Start Game\n 2. Exit Game\n");
+    printf("\nChoice: ");
+    scanf_s("\n%d", &choice); //looks for User input of their choice on the menu. This is where the choice integer will be used.
+    if (choice == 1) {
+        flag = 1; //If the choice is a 1, the function will change the global integer to 1.
+        initialize(); //It will also start the initialize function.
+    }
+    if (choice == 2) { //If the User chooses option 2, the program will be quit and ended immediately. 
+        exit(0);
+    }
+}
